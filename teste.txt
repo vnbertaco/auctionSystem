@@ -1,0 +1,22 @@
+export JWT_SECRET=Ao-final-confira-consistência-dos-dados-no-banco
+ 
+
+BID_ID=$(uuidgen)
+TOKEN_U1=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1MSIsImlhdCI6MTc5Mzk0MjAxMywiZXhwIjoxNzkzOTQ1NjEzfQ.hhS_WkyoR98G_xg7ClxXZKM2Zx_CL5Z-BBtzyliH-aA
+curl -i -X POST "http://localhost:8080/bids" \
+  -H "Authorization: Bearer $TOKEN_U1" \
+  -H "Content-Type: application/json" \
+  -d "{
+        \"auction_id\": \"c760652d-5389-4550-a89f-2472453c32a6\",
+        \"valor\": 1000000.02,
+        \"bid_id\": \"$BID_ID\",
+        \"timestamp_cliente\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+      }"
+
+
+docker compose up -d
+docker ps
+docker stop $(docker ps -aq) && docker rm $(docker ps -aq)
+docker exec -it 08efe1d20591 bash
+psql -U auction
+\dt

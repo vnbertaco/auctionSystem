@@ -1,0 +1,509 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-11-06T00:00:00.000Z",
+  "__export_source": "claude-code",
+  "resources": [
+    {
+      "_id": "wrk_bid",
+      "_type": "workspace",
+      "name": "bid-service",
+      "description": "Coleção de testes do serviço de lances (auctionSystem)",
+      "scope": "collection"
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_bid",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8080",
+        "auction_id": "6f1c2a3e-1111-4a6b-9c0d-000000000001",
+        "token_u1": "COLE_AQUI_O_TOKEN (./load-tests/gen-jwt.sh u1)",
+        "token_u2": "COLE_AQUI_O_TOKEN (./load-tests/gen-jwt.sh u2)",
+        "token_s1": "COLE_AQUI_O_TOKEN (./load-tests/gen-jwt.sh s1)",
+        "bid_id_fixo": "3f9c1e2a-8b7d-4c6e-9a1f-2d3e4f5a6b7c"
+      },
+      "dataPropertyOrder": null,
+      "isPrivate": false,
+      "metaSortKey": 1762400000000
+    },
+    {
+      "_id": "fld_ok",
+      "_type": "request_group",
+      "parentId": "wrk_bid",
+      "name": "1. Fluxo feliz",
+      "metaSortKey": 1
+    },
+    {
+      "_id": "fld_idem",
+      "_type": "request_group",
+      "parentId": "wrk_bid",
+      "name": "2. Idempotência",
+      "metaSortKey": 2
+    },
+    {
+      "_id": "fld_err",
+      "_type": "request_group",
+      "parentId": "wrk_bid",
+      "name": "3. Erros",
+      "metaSortKey": 3
+    },
+    {
+      "_id": "fld_obs",
+      "_type": "request_group",
+      "parentId": "wrk_bid",
+      "name": "4. Observabilidade",
+      "metaSortKey": 4
+    },
+    {
+      "_id": "req_u1_150",
+      "_type": "request",
+      "parentId": "fld_ok",
+      "name": "Lance u1 - 150,00",
+      "description": "Retorna 202 RECEIVED. O resultado chega por WebSocket (scripts/ouvir-eventos.mjs).",
+      "method": "POST",
+      "url": "{{ _.base_url }}/bids",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token_u1 }}"
+      },
+      "metaSortKey": 1,
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"auction_id\": \"{{ _.auction_id }}\",\n  \"valor\": 150.00,\n  \"bid_id\": \"{% uuid 'v4' %}\",\n  \"timestamp_cliente\": \"{% now 'iso-8601', '' %}\"\n}"
+      },
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_u2_200",
+      "_type": "request",
+      "parentId": "fld_ok",
+      "name": "Lance u2 - 200,00",
+      "description": "Supera o lance de u1 (rode antes o lance de 150).",
+      "method": "POST",
+      "url": "{{ _.base_url }}/bids",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token_u2 }}"
+      },
+      "metaSortKey": 2,
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"auction_id\": \"{{ _.auction_id }}\",\n  \"valor\": 200.00,\n  \"bid_id\": \"{% uuid 'v4' %}\",\n  \"timestamp_cliente\": \"{% now 'iso-8601', '' %}\"\n}"
+      },
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_u1_below",
+      "_type": "request",
+      "parentId": "fld_ok",
+      "name": "Lance u1 - 50,00 (BELOW_STARTING_PRICE)",
+      "description": "202 no HTTP; rejeição `BELOW_STARTING_PRICE` chega pelo WebSocket.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/bids",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token_u1 }}"
+      },
+      "metaSortKey": 3,
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"auction_id\": \"{{ _.auction_id }}\",\n  \"valor\": 50.00,\n  \"bid_id\": \"{% uuid 'v4' %}\"\n}"
+      },
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_seller",
+      "_type": "request",
+      "parentId": "fld_ok",
+      "name": "Lance do vendedor s1 (SELLER_CANNOT_BID)",
+      "description": "202 no HTTP; rejeição `SELLER_CANNOT_BID` via WebSocket.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/bids",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token_s1 }}"
+      },
+      "metaSortKey": 4,
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"auction_id\": \"{{ _.auction_id }}\",\n  \"valor\": 999.00,\n  \"bid_id\": \"{% uuid 'v4' %}\"\n}"
+      },
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_notfound",
+      "_type": "request",
+      "parentId": "fld_ok",
+      "name": "Leilão inexistente (AUCTION_NOT_FOUND)",
+      "description": "202 no HTTP; `AUCTION_NOT_FOUND` via WebSocket.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/bids",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token_u1 }}"
+      },
+      "metaSortKey": 5,
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"auction_id\": \"{% uuid 'v4' %}\",\n  \"valor\": 100.00,\n  \"bid_id\": \"{% uuid 'v4' %}\"\n}"
+      },
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_dup1",
+      "_type": "request",
+      "parentId": "fld_idem",
+      "name": "Lance com bid_id fixo (1º envio)",
+      "description": "Troque `bid_id_fixo` no ambiente para repetir o teste do zero.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/bids",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token_u1 }}"
+      },
+      "metaSortKey": 6,
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"auction_id\": \"{{ _.auction_id }}\",\n  \"valor\": 300.00,\n  \"bid_id\": \"{{ _.bid_id_fixo }}\"\n}"
+      },
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_dup2",
+      "_type": "request",
+      "parentId": "fld_idem",
+      "name": "Reenvio do mesmo bid_id (duplicate: true)",
+      "description": "Resultado volta no WebSocket com `duplicate: true`; `bids` mantém uma linha.",
+      "method": "POST",
+      "url": "{{ _.base_url }}/bids",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token_u1 }}"
+      },
+      "metaSortKey": 7,
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"auction_id\": \"{{ _.auction_id }}\",\n  \"valor\": 300.00,\n  \"bid_id\": \"{{ _.bid_id_fixo }}\"\n}"
+      },
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_401a",
+      "_type": "request",
+      "parentId": "fld_err",
+      "name": "401 - sem token",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/bids",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {},
+      "metaSortKey": 8,
+      "body": {
+        "mimeType": "application/json",
+        "text": "{}"
+      },
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_401b",
+      "_type": "request",
+      "parentId": "fld_err",
+      "name": "401 - token inválido",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/bids",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "token.invalido.aqui"
+      },
+      "metaSortKey": 9,
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"auction_id\": \"{{ _.auction_id }}\",\n  \"valor\": 150.00,\n  \"bid_id\": \"{% uuid 'v4' %}\"\n}"
+      },
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_400a",
+      "_type": "request",
+      "parentId": "fld_err",
+      "name": "400 - valor negativo",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/bids",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token_u1 }}"
+      },
+      "metaSortKey": 10,
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"auction_id\": \"{{ _.auction_id }}\",\n  \"valor\": -5,\n  \"bid_id\": \"{% uuid 'v4' %}\"\n}"
+      },
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_400b",
+      "_type": "request",
+      "parentId": "fld_err",
+      "name": "400 - valor com 3 casas decimais",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/bids",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token_u1 }}"
+      },
+      "metaSortKey": 11,
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"auction_id\": \"{{ _.auction_id }}\",\n  \"valor\": 150.123,\n  \"bid_id\": \"{% uuid 'v4' %}\"\n}"
+      },
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_400c",
+      "_type": "request",
+      "parentId": "fld_err",
+      "name": "400 - bid_id não é UUID",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/bids",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token_u1 }}"
+      },
+      "metaSortKey": 12,
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"auction_id\": \"{{ _.auction_id }}\",\n  \"valor\": 150.00,\n  \"bid_id\": \"nao-e-uuid\"\n}"
+      },
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_400d",
+      "_type": "request",
+      "parentId": "fld_err",
+      "name": "400 - campo obrigatório ausente",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/bids",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token_u1 }}"
+      },
+      "metaSortKey": 13,
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"valor\": 150.00,\n  \"bid_id\": \"{% uuid 'v4' %}\"\n}"
+      },
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_400e",
+      "_type": "request",
+      "parentId": "fld_err",
+      "name": "400 - timestamp_cliente em formato inválido",
+      "description": "",
+      "method": "POST",
+      "url": "{{ _.base_url }}/bids",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token_u1 }}"
+      },
+      "metaSortKey": 14,
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"auction_id\": \"{{ _.auction_id }}\",\n  \"valor\": 150.00,\n  \"bid_id\": \"{% uuid 'v4' %}\",\n  \"timestamp_cliente\": \"03/11/2026 12:00\"\n}"
+      },
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_429",
+      "_type": "request",
+      "parentId": "fld_err",
+      "name": "429 - rate limit",
+      "description": "Limite padrão: 20 req/s por usuário. Use o Runner do Insomnia com muitas iterações ou k6 (load-tests).",
+      "method": "POST",
+      "url": "{{ _.base_url }}/bids",
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "authentication": {
+        "type": "bearer",
+        "token": "{{ _.token_u1 }}"
+      },
+      "metaSortKey": 15,
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"auction_id\": \"{{ _.auction_id }}\",\n  \"valor\": 150.00,\n  \"bid_id\": \"{% uuid 'v4' %}\",\n  \"timestamp_cliente\": \"{% now 'iso-8601', '' %}\"\n}"
+      },
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_health",
+      "_type": "request",
+      "parentId": "fld_obs",
+      "name": "Health",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/actuator/health",
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": 16,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global"
+    },
+    {
+      "_id": "req_prom",
+      "_type": "request",
+      "parentId": "fld_obs",
+      "name": "Métricas Prometheus",
+      "description": "",
+      "method": "GET",
+      "url": "{{ _.base_url }}/actuator/prometheus",
+      "headers": [],
+      "authentication": {},
+      "metaSortKey": 17,
+      "isPrivate": false,
+      "settingStoreCookies": true,
+      "settingSendCookies": true,
+      "settingFollowRedirects": "global"
+    }
+  ]
+}

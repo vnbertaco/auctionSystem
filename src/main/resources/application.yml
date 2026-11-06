@@ -1,0 +1,53 @@
+spring:
+  application:
+    name: bid-service
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/auction}
+    username: ${DB_USER:auction}
+    password: ${DB_PASSWORD:auction}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+  flyway:
+    enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: com.auction.bid.pipeline.BidMessageJsonSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        spring.json.add.type.headers: false
+    consumer:
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+      properties:
+        spring.json.value.default.type: com.auction.bid.pipeline.BidMessage
+        spring.json.trusted.packages: com.auction.bid.pipeline
+
+server:
+  port: ${SERVER_PORT:8080}
+
+auction:
+  kafka:
+    topic: bids
+    concurrency: 6
+    publish-timeout-seconds: 5
+  gateway:
+    enabled: true
+
+jwt:
+  secret: ${JWT_SECRET:}
+
+ratelimit:
+  requests-per-second: ${RATELIMIT_RPS:20}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus

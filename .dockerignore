@@ -1,0 +1,11 @@
+target/
+.git/
+.idea/
+.vscode/
+*.log
+.env
+.env.*
+specs/
+.specify/
+.claude/
+load-tests/

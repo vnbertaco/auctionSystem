@@ -1,0 +1,48 @@
+openapi: 3.0.3
+info:
+  title: Auction Bid API
+  version: 1.0.0
+  description: >
+    Autenticação (JWT simulado) e rate limit são aplicados por filtros da própria aplicação.
+    O resultado final do lance é entregue por WebSocket (ver websocket.md).
+paths:
+  /bids:
+    post:
+      summary: Submeter um lance
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BidRequest' }
+      responses:
+        '202':
+          description: Lance recebido e publicado no pipeline (sem resultado ainda)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BidReceived' }
+        '400':
+          description: Corpo inválido (bid_id não-UUID, valor <= 0, campos ausentes)
+        '401':
+          description: Token ausente ou inválido (rejeitado pelo JwtAuthFilter)
+        '429':
+          description: Limite de taxa excedido (rejeitado pelo RateLimitFilter)
+        '503':
+          description: Pipeline indisponível (falha ao publicar no Kafka)
+components:
+  securitySchemes:
+    bearerAuth: { type: http, scheme: bearer, bearerFormat: JWT }
+  schemas:
+    BidRequest:
+      type: object
+      required: [auction_id, valor, bid_id]
+      properties:
+        auction_id: { type: string, format: uuid }
+        valor: { type: number, multipleOf: 0.01, exclusiveMinimum: 0 }
+        bid_id: { type: string, format: uuid, description: Gerado pelo cliente; globalmente único }
+        timestamp_cliente: { type: string, format: date-time }
+    BidReceived:
+      type: object
+      properties:
+        bid_id: { type: string, format: uuid }
+        status: { type: string, enum: [RECEIVED] }
